@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spot the Difference</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --border: #e8e6e1;
+    --text: #1a1a1a;
+    --text-muted: #888880;
+    --green: #3a8f5a;
+    --green-light: #e8f5ed;
+    --blue: #2563a8;
+    --track: #e8e6e1;
+    --radius: 10px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 24px 48px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    max-width: 1100px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .instructions {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 620px;
+    line-height: 1.6;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .clicks-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .clicks-badge span {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  /* ── GOAL BANNER ── */
+  #goal-banner {
+    display: none;
+    background: var(--green-light);
+    border: 1px solid #b6ddc5;
+    color: var(--green);
+    border-radius: var(--radius);
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+  }
+
+  /* ── POINTS FLASH ── */
+  #points-flash {
+    height: 28px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    text-align: center;
+  }
+
+  /* ── PROGRESS INDICATORS ── */
+
+  /* Horizontal bar */
+  #horizontal-bar-wrap {
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 10px;
+    background: var(--track);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--green);
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── GAME AREA ── */
+  #game-area {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  #image-wrap {
+    position: relative;
+    flex: 1;
+    cursor: crosshair;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    border: 1px solid var(--border);
+  }
+
+  #game-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* Click marker */
+  .click-marker {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid white;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: markerPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .click-marker.hit { background: rgba(58, 143, 90, 0.5); border-color: var(--green); }
+  .click-marker.miss { background: rgba(200, 60, 60, 0.35); border-color: #c83c3c; }
+
+  @keyframes markerPop {
+    from { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+
+  /* Vertical bar (right of image) */
+  #vertical-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .vert-track {
+    width: 10px;
+    height: 300px;
+    background: var(--track);
+    border-radius: 999px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vert-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%;
+    background: var(--green);
+    border-radius: 999px;
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Ring (overlaid on image, top-right) */
+  #ring-wrap {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+
+  #ring-svg circle.ring-fill {
+    transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── DONE BUTTON ── */
+  #done-btn {
+    display: none;
+    margin-top: 28px;
+    background: var(--text);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: background 0.2s, transform 0.1s;
+    animation: fadeIn 0.4s ease;
+  }
+
+  #done-btn:hover { background: #333; }
+  #done-btn:active { transform: scale(0.98); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── LOADING STATE ── */
+  #loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--text-muted);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <span>Loading game…</span>
+</div>
+
+<div id="app" style="display:none; width:100%; max-width:1100px; display:none; flex-direction:column; align-items:center; gap:16px;">
+
+  <header>
+    <h1>Spot the Difference</h1>
+    <p class="instructions">
+      The two paintings below differ in <strong>10 ways</strong>. Click on the differences you spot in the <strong>right-hand painting</strong>. Try to earn as many points as possible before time runs out.
+    </p>
+    <div class="meta-row">
+      <div class="clicks-badge">Clicks remaining: <span id="clicks-count">12</span></div>
+    </div>
+    <div id="goal-banner">🎉 Goal reached! Great job spotting those differences.</div>
+    <div id="points-flash"></div>
+  </header>
+
+  <!-- Horizontal bar injected here if condition = horizontal -->
+  <div id="horizontal-bar-wrap" style="display:none;">
+    <div class="bar-track"><div class="bar-fill" id="h-fill"></div></div>
+  </div>
+
+  <div id="game-area">
+    <div id="image-wrap">
+      <img id="game-image" src="" alt="Spot the difference painting" draggable="false"/>
+      <!-- Ring injected here if condition = ring -->
+    </div>
+    <!-- Vertical bar injected here if condition = vertical -->
+  </div>
+
+  <button id="done-btn" onclick="finishGame()">Continue →</button>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+var IMAGE_SRC = 'https://jamclee.github.io/spot-the-differences/game_stimuli.png';
+
+var correctRegions = [
+  {x1: 491, y1: 416, x2: 514, y2: 433, points: 3},  // painting color
+  {x1: 402, y1: 327, x2: 419, y2: 342, points: 4},  // painting shape
+  {x1: 666, y1: 314, x2: 684, y2: 320, points: 3},  // sunglasses
+  {x1: 602, y1: 448, x2: 636, y2: 475, points: 4},  // leg
+  {x1: 426, y1: 242, x2: 448, y2: 286, points: 3},  // easel tall
+  {x1: 688, y1: 123, x2: 708, y2: 166, points: 5},  // building tall
+  {x1: 450, y1: 19,  x2: 484, y2: 32,  points: 4},  // tree branch
+  {x1: 538, y1: 60,  x2: 562, y2: 73,  points: 5},  // tree leaves
+  {x1: 589, y1: 218, x2: 638, y2: 256, points: 6},  // awning
+  {x1: 483, y1: 161, x2: 497, y2: 171, points: 3}   // building paint
+];
+
+// Right half of the image = clickable zone (adjust if needed)
+// This is expressed as a fraction of total image width: clicks only count if x > IMAGE_WIDTH * RIGHT_START
+var RIGHT_START_FRACTION = 0.5;
+
+var MAX_CLICKS = 12;
+var MAX_SCORE  = 20;
+var TIME_LIMIT_MS = 120000; // 2 minutes
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+var condition     = null;
+var score         = 0;
+var totalClicks   = 0;
+var clickedRegions = [];
+var flashTimer    = null;
+var gameTimer     = null;
+var gameActive    = false;
+var circumference = 0; // for ring
+
+// ─────────────────────────────────────────────
+// WAIT FOR CONDITION FROM QUALTRICS
+// ─────────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'INIT_CONDITION') {
+    condition = e.data.condition;
+    console.log('Received condition:', condition);
+    initGame();
+  }
+});
+
+// Fallback: read from URL param for standalone testing
+// e.g. open as game.html?condition=horizontal
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var c = params.get('condition');
+  if (c) {
+    condition = c;
+    initGame();
+  }
+})();
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+function initGame() {
+  document.getElementById('loading').style.display = 'none';
+  var app = document.getElementById('app');
+  app.style.display = 'flex';
+
+  // Set up image
+  var img = document.getElementById('game-image');
+  img.src = IMAGE_SRC;
+
+  // Set up progress indicator
+  if (condition === 'horizontal') {
+    document.getElementById('horizontal-bar-wrap').style.display = 'block';
+  }
+
+  if (condition === 'vertical') {
+    buildVerticalBar();
+  }
+
+  if (condition === 'ring') {
+    buildRing();
+  }
+
+  // Attach click handler
+  var imageWrap = document.getElementById('image-wrap');
+  imageWrap.addEventListener('click', handleClick);
+
+  // Start 2-minute timer
+  gameTimer = setTimeout(function() {
+    revealDoneButton();
+  }, TIME_LIMIT_MS);
+
+  gameActive = true;
+}
+
+// ─────────────────────────────────────────────
+// BUILD VERTICAL BAR
+// ─────────────────────────────────────────────
+function buildVerticalBar() {
+  var vertWrap = document.createElement('div');
+  vertWrap.id = 'vertical-bar-wrap';
+  vertWrap.innerHTML =
+    '<div class="vert-track"><div class="vert-fill" id="v-fill"></div></div>';
+  document.getElementById('game-area').appendChild(vertWrap);
+}
+
+// ─────────────────────────────────────────────
+// BUILD RING
+// ─────────────────────────────────────────────
+function buildRing() {
+  var size = 100;
+  var stroke = 10;
+  var r = (size - stroke) / 2;
+  circumference = 2 * Math.PI * r;
+
+  var ringWrap = document.createElement('div');
+  ringWrap.id = 'ring-wrap';
+  ringWrap.innerHTML =
+    '<svg id="ring-svg" width="' + size + '" height="' + size + '">' +
+    '<circle cx="' + size/2 + '" cy="' + size/2 + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="' + stroke + '"/>' +
+    '<circle class="ring-fill" id="r-fill" cx="' + size/2 + '" cy="' + size/2 + '" r="' + r + '" fill="none" stroke="#3a8f5a" stroke-width="' + stroke + '"' +
+    ' stroke-dasharray="' + circumference + '" stroke-dashoffset="' + circumference + '"' +
+    ' transform="rotate(-90 ' + size/2 + ' ' + size/2 + ')"/>' +
+    '</svg>';
+  document.getElementById('image-wrap').appendChild(ringWrap);
+}
+
+// ─────────────────────────────────────────────
+// CLICK HANDLER
+// ─────────────────────────────────────────────
+function handleClick(e) {
+  if (!gameActive) return;
+  if (totalClicks >= MAX_CLICKS) return;
+
+  var img = document.getElementById('game-image');
+  var rect = img.getBoundingClientRect();
+
+  var clickX = e.clientX - rect.left;
+  var clickY = e.clientY - rect.top;
+
+  // Only allow clicks on the right half
+  if (clickX < img.clientWidth * RIGHT_START_FRACTION) return;
+
+  totalClicks++;
+  var clicksLeft = MAX_CLICKS - totalClicks;
+  document.getElementById('clicks-count').textContent = clicksLeft;
+
+  var hit = false;
+  var hitPoints = 0;
+
+  correctRegions.forEach(function(region, i) {
+    if (clickedRegions.includes(i)) return;
+    if (clickX >= region.x1 && clickX <= region.x2 &&
+        clickY >= region.y1 && clickY <= region.y2) {
+      hit = true;
+      hitPoints = region.points;
+      clickedRegions.push(i);
+      score += region.points;
+    }
+  });
+
+  // Place visual marker
+  placeMarker(clickX, clickY, rect, hit);
+
+  if (hit) {
+    showFlash('+' + hitPoints + ' point' + (hitPoints !== 1 ? 's' : ''));
+    updateProgress();
+    if (score >= MAX_SCORE) {
+      onGoalReached();
+    }
+  }
+
+  // Disable clicks when exhausted
+  if (totalClicks >= MAX_CLICKS) {
+    gameActive = false;
+    revealDoneButton();
+  }
+}
+
+// ─────────────────────────────────────────────
+// PLACE CLICK MARKER ON IMAGE
+// ─────────────────────────────────────────────
+function placeMarker(x, y, rect, hit) {
+  var marker = document.createElement('div');
+  marker.className = 'click-marker ' + (hit ? 'hit' : 'miss');
+  // Position relative to image-wrap
+  marker.style.left = x + 'px';
+  marker.style.top  = y + 'px';
+  document.getElementById('image-wrap').appendChild(marker);
+}
+
+// ─────────────────────────────────────────────
+// UPDATE PROGRESS INDICATOR
+// ─────────────────────────────────────────────
+function updateProgress() {
+  var percent = Math.min(score / MAX_SCORE * 100, 100);
+
+  if (condition === 'horizontal') {
+    document.getElementById('h-fill').style.width = percent + '%';
+    if (percent >= 100) {
+      document.getElementById('h-fill').style.background = '#2563a8';
+    }
+  }
+
+  if (condition === 'vertical') {
+    document.getElementById('v-fill').style.height = percent + '%';
+    if (percent >= 100) {
+      document.getElementById('v-fill').style.background = '#2563a8';
+    }
+  }
+
+  if (condition === 'ring') {
+    var offset = circumference - (percent / 100) * circumference;
+    document.getElementById('r-fill').setAttribute('stroke-dashoffset', offset);
+    if (percent >= 100) {
+      document.getElementById('r-fill').setAttribute('stroke', '#2563a8');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// POINTS FLASH
+// ─────────────────────────────────────────────
+function showFlash(msg) {
+  var el = document.getElementById('points-flash');
+  if (flashTimer) clearTimeout(flashTimer);
+  el.textContent = msg;
+  el.style.opacity = '1';
+  flashTimer = setTimeout(function() {
+    el.style.opacity = '0';
+  }, 5000);
+}
+
+// ─────────────────────────────────────────────
+// GOAL REACHED
+// ─────────────────────────────────────────────
+function onGoalReached() {
+  document.getElementById('goal-banner').style.display = 'block';
+  clearTimeout(gameTimer);
+  revealDoneButton();
+}
+
+// ─────────────────────────────────────────────
+// REVEAL DONE BUTTON
+// ─────────────────────────────────────────────
+function revealDoneButton() {
+  gameActive = false;
+  document.getElementById('done-btn').style.display = 'inline-block';
+}
+
+// ─────────────────────────────────────────────
+// FINISH — send data back to Qualtrics
+// ─────────────────────────────────────────────
+function finishGame() {
+  // Send score + condition to parent Qualtrics page
+  window.parent.postMessage({
+    type: 'GAME_COMPLETE',
+    score: score,
+    condition: condition,
+    totalClicks: totalClicks,
+    regionsFound: clickedRegions.length
+  }, '*');
+
+  // Optionally show a brief thank-you while Qualtrics processes
+  document.getElementById('done-btn').textContent = 'Saving…';
+  document.getElementById('done-btn').disabled = true;
+}
+</script>
+</body>
+</html>
