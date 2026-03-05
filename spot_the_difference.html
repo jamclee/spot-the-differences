@@ -416,9 +416,11 @@ function initGame() {
   imageWrap.addEventListener('click', handleClick);
 
   gameTimer = setTimeout(function() {
+  if (score < MAX_SCORE) {
     document.getElementById('time-banner').style.display = 'block';
-    document.getElementById('done-btn').classList.add('visible');
-  }, TIME_LIMIT_MS);
+  }
+  document.getElementById('done-btn').classList.add('visible');
+}, TIME_LIMIT_MS);
 
   gameActive = true;
 }
