@@ -417,7 +417,11 @@ function initGame() {
 
   gameTimer = setTimeout(function() {
   if (score < MAX_SCORE) {
-    document.getElementById('time-banner').style.display = 'block';
+    var timeBanner = document.getElementById('time-banner');
+    timeBanner.style.display = 'block';
+    setTimeout(function() {
+      timeBanner.style.display = 'none';
+    }, 30000);
   }
   document.getElementById('done-btn').classList.add('visible');
 }, TIME_LIMIT_MS);
