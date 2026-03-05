@@ -344,8 +344,8 @@
       <div class="clicks-badge">Clicks remaining: <span id="clicks-count">12</span></div>
     </div>
     <div id="goal-banner-wrap">
-      <div id="goal-banner">🎉 Goal reached! Great job spotting those differences.</div>
-      <div id="time-banner">⏱ You have been playing for 2 minutes.<br><br>Feel free to keep playing the game, or click Continue to move onto the next part of the survey.</div>
+      <div id="goal-banner">🎉 Congratulations! You have reached your goal.</div>
+      <div id="time-banner">You have been playing for 2 minutes.<br><br>Feel free to keep playing the game, or click Continue to move onto the next part of the survey.</div>
     </div>
     <div id="points-flash"></div>
   </header>
@@ -382,16 +382,16 @@
 var IMAGE_SRC = 'https://jamclee.github.io/spot-the-differences/game_stimuli.png';
 
 var correctRegions = [
-  {name: 'painting_color',  x1: 686, y1: 578, x2: 743, y2: 634, points: 3},  // medium: +15px
-  {name: 'painting_shape',  x1: 561, y1: 452, x2: 617, y2: 506, points: 4},  // medium: +15px
-  {name: 'sunglasses',      x1: 934, y1: 427, x2: 997, y2: 478, points: 3},  // small:  +20px
-  {name: 'leg',             x1: 842, y1: 626, x2: 917, y2: 693, points: 4},  // large:  +10px
-  {name: 'easel_tall',      x1: 596, y1: 335, x2: 649, y2: 416, points: 3},  // large:  +10px
-  {name: 'building_tall',   x1: 965, y1: 151, x2: 1022, y2: 250, points: 5}, // large:  +10px
-  {name: 'tree_branch',     x1: 629, y1: 7,   x2: 713, y2: 60,  points: 4},  // medium: +15px
-  {name: 'tree_leaves',     x1: 757, y1: 59,  x2: 829, y2: 123, points: 5},  // small:  +20px
+  {name: 'painting_color',  x1: 696, y1: 588, x2: 733, y2: 624, points: 3},  // +5px
+  {name: 'painting_shape',  x1: 571, y1: 462, x2: 607, y2: 496, points: 4},  // +5px
+  {name: 'sunglasses',      x1: 949, y1: 442, x2: 982, y2: 463, points: 3},  // +5px
+  {name: 'leg',             x1: 857, y1: 631, x2: 912, y2: 688, points: 4},  // +5px
+  {name: 'easel_tall',      x1: 601, y1: 340, x2: 644, y2: 411, points: 3},  // +5px
+  {name: 'building_tall',   x1: 980, y1: 156, x2: 1017, y2: 245, points: 5}, // +5px
+  {name: 'tree_branch',     x1: 639, y1: 17,  x2: 703, y2: 50,  points: 4},  // +5px
+  {name: 'tree_leaves',     x1: 772, y1: 74,  x2: 814, y2: 108, points: 5},  // +5px
   {name: 'awning',          x1: 839, y1: 309, x2: 913, y2: 367, points: 6},  // no padding
-  {name: 'building_paint',  x1: 667, y1: 203, x2: 734, y2: 262, points: 3}   // small:  +20px
+  {name: 'building_paint',  x1: 682, y1: 218, x2: 719, y2: 247, points: 3}   // +5px
 ];
 
 // Right half of the image = clickable zone (adjust if needed)
