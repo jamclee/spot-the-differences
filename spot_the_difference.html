@@ -564,6 +564,7 @@ function showFlash(msg) {
 // GOAL REACHED
 // ─────────────────────────────────────────────
 function onGoalReached() {
+  document.getElementById('time-banner').style.display = 'none';
   document.getElementById('goal-banner').style.display = 'block';
   document.getElementById('done-btn').classList.add('visible');
 }
