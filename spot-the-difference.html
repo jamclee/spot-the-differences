@@ -351,16 +351,16 @@
 var IMAGE_SRC = 'https://jamclee.github.io/spot-the-differences/game_stimuli.png';
 
 var correctRegions = [
-  {name: 'painting_color',  x1: 701, y1: 593, x2: 728, y2: 619, points: 3},
-  {name: 'painting_shape',  x1: 576, y1: 467, x2: 602, y2: 491, points: 4},
-  {name: 'sunglasses',      x1: 954, y1: 447, x2: 977, y2: 458, points: 3},
-  {name: 'leg',             x1: 862, y1: 636, x2: 907, y2: 683, points: 4},
-  {name: 'easel_tall',      x1: 606, y1: 345, x2: 639, y2: 406, points: 3},
-  {name: 'building_tall',   x1: 985, y1: 161, x2: 1012, y2: 240, points: 5},
-  {name: 'tree_branch',     x1: 644, y1: 22,  x2: 698, y2: 45,  points: 4},
-  {name: 'tree_leaves',     x1: 777, y1: 79,  x2: 809, y2: 103, points: 5},
-  {name: 'awning',          x1: 839, y1: 309, x2: 913, y2: 367, points: 6},
-  {name: 'building_paint',  x1: 687, y1: 223, x2: 714, y2: 242, points: 3}
+  {name: 'painting_color',  x1: 686, y1: 578, x2: 743, y2: 634, points: 3},  // medium: +15px
+  {name: 'painting_shape',  x1: 561, y1: 452, x2: 617, y2: 506, points: 4},  // medium: +15px
+  {name: 'sunglasses',      x1: 934, y1: 427, x2: 997, y2: 478, points: 3},  // small:  +20px
+  {name: 'leg',             x1: 842, y1: 626, x2: 917, y2: 693, points: 4},  // large:  +10px
+  {name: 'easel_tall',      x1: 596, y1: 335, x2: 649, y2: 416, points: 4},  // large:  +10px
+  {name: 'building_tall',   x1: 965, y1: 151, x2: 1022, y2: 250, points: 5}, // large:  +10px
+  {name: 'tree_branch',     x1: 629, y1: 7,   x2: 713, y2: 60,  points: 3},  // medium: +15px
+  {name: 'tree_leaves',     x1: 757, y1: 59,  x2: 829, y2: 123, points: 5},  // small:  +20px
+  {name: 'awning',          x1: 839, y1: 309, x2: 913, y2: 367, points: 6},  // no padding
+  {name: 'building_paint',  x1: 667, y1: 203, x2: 734, y2: 262, points: 3}   // small:  +20px
 ];
 
 // Right half of the image = clickable zone (adjust if needed)
