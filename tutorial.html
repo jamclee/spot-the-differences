@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spot the Difference – Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --border: #e8e6e1;
+    --text: #1a1a1a;
+    --text-muted: #888880;
+    --green: #3a8f5a;
+    --green-light: #e8f5ed;
+    --blue: #2563a8;
+    --track: #e8e6e1;
+    --radius: 10px;
+    --highlight-border: #e6a800;
+  }
+  html, body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 24px 48px;
+    min-height: 100vh;
+  }
+  #app {
+    max-width: 1160px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  header {
+    width: 100%;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .instructions {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 680px;
+    line-height: 1.6;
+  }
+  .clicks-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .clicks-badge span { font-weight: 500; }
+
+  /* ── PROGRESS INDICATORS ── */
+  #horizontal-bar-wrap { width: 400px; }
+  .bar-track {
+    width: 400px; height: 18px;
+    background: var(--track);
+    border-radius: 999px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; width: 0%;
+    background: var(--green);
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  #ring-svg circle.ring-fill {
+    transition: stroke-dashoffset 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  .points-flash {
+    font-size: 1rem; font-weight: 500;
+    color: var(--green); height: 24px;
+    opacity: 0; transition: opacity 0.4s ease;
+    text-align: center; margin-top: 6px;
+  }
+
+  /* ── GAME AREA ── */
+  #game-area {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+    max-width: 1160px;
+  }
+  #image-wrap {
+    position: relative;
+    flex: none;
+    width: 1100px;
+    max-width: 100%;
+    cursor: crosshair;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    border: 1px solid var(--border);
+  }
+  #game-image {
+    display: block; width: 100%; height: auto;
+    border-radius: var(--radius);
+    user-select: none; -webkit-user-drag: none;
+  }
+
+  /* ── DIM OVERLAY ── */
+  #dim-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 10;
+    border-radius: var(--radius);
+    display: none;
+    pointer-events: none;
+  }
+
+  /* ── MODAL CARD ── */
+  #modal-card {
+    display: none;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+    padding: 28px 32px 24px;
+    width: 420px;
+    max-width: 88%;
+    text-align: center;
+    animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn {
+    from { transform: translate(-50%,-50%) scale(0.88); opacity: 0; }
+    to   { transform: translate(-50%,-50%) scale(1);    opacity: 1; }
+  }
+  #modal-card .modal-step {
+    font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 10px;
+  }
+  #modal-card .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.25rem; font-weight: 400;
+    color: var(--text); margin-bottom: 10px;
+  }
+  #modal-card .modal-body {
+    font-size: 0.9rem; color: var(--text-muted);
+    line-height: 1.65; margin-bottom: 20px;
+  }
+  #modal-card .modal-body strong { color: var(--text); }
+  #modal-next {
+    background: var(--text); color: white;
+    border: none; border-radius: var(--radius);
+    padding: 10px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.01em;
+    transition: background 0.2s;
+  }
+  #modal-next:hover { background: #333; }
+
+  /* ── HIGHLIGHT BOXES ── */
+  .highlight-box {
+    position: absolute;
+    border: 3px solid var(--highlight-border);
+    background: rgba(255,200,0,0.3);
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 8;
+    display: none;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .highlight-box::after {
+    content: attr(data-label);
+    position: absolute;
+    top: -28px; left: 50%;
+    transform: translateX(-50%);
+    background: #e6a800; color: white;
+    font-size: 0.72rem; font-weight: 600;
+    padding: 2px 10px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0   rgba(230,168,0,0.5); }
+    50%      { box-shadow: 0 0 0 8px rgba(230,168,0,0);   }
+  }
+
+  /* ── LEFT BLOCK & LABEL ── */
+  #left-block {
+    position: absolute;
+    top: 0; left: 0; width: 50%; height: 100%;
+    cursor: not-allowed; z-index: 5;
+  }
+  #left-label {
+    position: absolute;
+    top: 50%; left: 25%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.45);
+    color: white; font-size: 0.78rem; font-weight: 600;
+    padding: 5px 14px; border-radius: 20px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    pointer-events: none; z-index: 15;
+    display: none;
+  }
+
+  /* ── CLICK MARKER ── */
+  .click-marker {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-radius: 50%; border: 2px solid white;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+    animation: markerPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 9;
+  }
+  .click-marker.hit  { background: rgba(58,143,90,0.5);  border-color: var(--green); }
+  .click-marker.miss { background: rgba(200,60,60,0.35); border-color: #c83c3c; }
+  @keyframes markerPop {
+    from { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+    to   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  }
+
+  /* ── VERTICAL BAR ── */
+  #vertical-bar-wrap {
+    flex-shrink: 0; width: 40px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px; padding-top: 4px;
+  }
+  .vert-track {
+    width: 18px; height: 400px;
+    background: var(--track); border-radius: 999px;
+    position: relative; overflow: hidden;
+  }
+  .vert-fill {
+    position: absolute; bottom: 0; width: 100%; height: 0%;
+    background: var(--green); border-radius: 999px;
+    transition: height 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── COMPLETION ── */
+  #completion-banner {
+    display: none;
+    background: var(--green-light);
+    border: 1px solid #b6ddc5; color: var(--green);
+    border-radius: var(--radius);
+    padding: 12px 28px; font-size: 0.95rem; font-weight: 500;
+    text-align: center; animation: fadeIn 0.4s ease;
+  }
+  #done-btn {
+    display: none; margin-top: 16px;
+    background: var(--text); color: white;
+    border: none; border-radius: var(--radius);
+    padding: 12px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.01em;
+    transition: background 0.2s, transform 0.1s;
+    animation: fadeIn 0.4s ease;
+  }
+  #done-btn:hover  { background: #333; }
+  #done-btn:active { transform: scale(0.98); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── COORD HELPER ── */
+  #coord-display {
+    display: none; position: fixed;
+    bottom: 16px; right: 16px;
+    background: rgba(0,0,0,0.8); color: #fff;
+    font-family: monospace; font-size: 0.85rem;
+    padding: 10px 16px; border-radius: 8px; z-index: 200;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Tutorial: Spot the Difference</h1>
+    <p class="instructions">Walk through this short tutorial before starting the real game.</p>
+    <div class="clicks-badge">Clicks remaining: <span id="clicks-count">12</span></div>
+  </header>
+
+  <!-- Horizontal bar -->
+  <div id="horizontal-bar-wrap" style="display:none;">
+    <div style="font-size:0.85rem;color:#888880;margin-bottom:6px;text-align:left;">Goal: 20 points</div>
+    <div class="bar-track"><div class="bar-fill" id="h-fill"></div></div>
+    <div class="points-flash" id="h-points-flash"></div>
+  </div>
+
+  <!-- Ring -->
+  <div id="ring-bar-wrap" style="display:none;flex-direction:column;align-items:center;">
+    <div style="font-size:0.85rem;color:#888880;margin-bottom:6px;text-align:center;">Goal: 20 points</div>
+    <div id="ring-svg-container"></div>
+    <div class="points-flash" id="r-points-flash"></div>
+  </div>
+
+  <!-- Game area -->
+  <div id="game-area">
+    <div id="image-wrap">
+      <img id="game-image"
+           src="https://jamclee.github.io/spot-the-differences/game_example.png"
+           alt="Tutorial spot the difference" draggable="false"/>
+
+      <!-- Dim overlay -->
+      <div id="dim-overlay"></div>
+
+      <!-- Modal card -->
+      <div id="modal-card">
+        <div class="modal-step" id="modal-step-label"></div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-body"  id="modal-body"></div>
+        <button id="modal-next" onclick="advanceStep()">Next →</button>
+      </div>
+
+      <!-- Left half block -->
+      <div id="left-block"></div>
+      <div id="left-label">Original — do not click here</div>
+
+      <!-- Highlight boxes -->
+      <div class="highlight-box" id="highlight-1" data-label="Click here!"></div>
+      <div class="highlight-box" id="highlight-2" data-label="Click here!"></div>
+    </div>
+
+    <!-- Sidebar always present for layout consistency -->
+    <div id="vertical-bar-wrap"></div>
+  </div>
+
+  <div id="completion-banner">🎉 Great work! You found both differences. You're ready for the real game.</div>
+  <button id="done-btn" onclick="finishTutorial()">Continue to the game →</button>
+</div>
+
+<div id="coord-display">Move mouse over right image…</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+var tutorialRegions = [
+  {
+    name: 'diff_1', points: 5,
+    x1: 607, y1: 90,  x2: 686, y2: 100,
+    hTop: '13%', hLeft: '55%', hWidth: '7%', hHeight: '4%'
+  },
+  {
+    name: 'diff_2', points: 5,
+    x1: 875, y1: 514, x2: 922, y2: 533,
+    hTop: '77%', hLeft: '79%', hWidth: '5%', hHeight: '4%'
+  }
+];
+
+var RIGHT_START_FRACTION = 0.5;
+var MAX_CLICKS = 12;
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+var condition     = null;
+var score         = 0;
+var totalClicks   = 0;
+var foundCount    = 0;
+var flashTimer    = null;
+var circumference = 0;
+var gameActive    = false;
+var currentStep   = 0;
+var coordMode     = false;
+
+// ─────────────────────────────────────────────
+// STEPS
+// ─────────────────────────────────────────────
+function getSteps() {
+  var indicatorBody = '';
+  if (condition === 'horizontal') {
+    indicatorBody = 'As you find differences and earn points, the <strong>horizontal bar above the image</strong> fills up from left to right. Your goal is to reach <strong>20 points</strong> before time runs out.';
+  } else if (condition === 'vertical') {
+    indicatorBody = 'As you find differences and earn points, the <strong>vertical bar to the right of the image</strong> fills up from bottom to top. Your goal is to reach <strong>20 points</strong> before time runs out.';
+  } else if (condition === 'ring') {
+    indicatorBody = 'As you find differences and earn points, the <strong>ring above the image</strong> fills up clockwise. Your goal is to reach <strong>20 points</strong> before time runs out.';
+  } else {
+    indicatorBody = 'As you find differences and earn points, your progress indicator updates. Your goal is to reach <strong>20 points</strong> before time runs out.';
+  }
+
+  return [
+    {
+      stepLabel: 'Step 1 of 5',
+      title: 'Welcome to the Tutorial',
+      body: 'This is a quick walkthrough of how the game works. Click <strong>Next</strong> at each step to continue.',
+      onShow: function() { showDim(true); lockClicking(); },
+      onNext: function() {}
+    },
+    {
+      stepLabel: 'Step 2 of 5',
+      title: 'Two Images — One Has Differences',
+      body: 'The <strong>left image</strong> is the original. The <strong>right image</strong> has subtle differences. You must <strong>only click on the right-hand image</strong> — clicks on the left image won\'t count.',
+      onShow: function() {
+        showDim(true);
+        document.getElementById('left-label').style.display = 'block';
+      },
+      onNext: function() {
+        document.getElementById('left-label').style.display = 'none';
+      }
+    },
+    {
+      stepLabel: 'Step 3 of 5',
+      title: 'Your Progress Indicator',
+      body: indicatorBody,
+      onShow: function() { showDim(true); },
+      onNext: function() {}
+    },
+    {
+      stepLabel: 'Step 4 of 5',
+      title: 'Find the First Difference',
+      body: 'A difference is highlighted on the right image. <strong>Click directly on the highlighted area</strong> to find it and earn points. Watch the progress indicator update!',
+      onShow: function() {
+        showDim(false);
+        showHighlight(0);
+        unlockClicking();
+        document.getElementById('modal-next').style.display = 'none';
+        hideModal();
+      },
+      onNext: function() {}
+    },
+    {
+      stepLabel: 'Step 5 of 5',
+      title: 'Find the Second Difference',
+      body: 'Nice! Now find the second highlighted difference on the right image.',
+      onShow: function() {
+        showDim(false);
+        showHighlight(1);
+        unlockClicking();
+        document.getElementById('modal-next').style.display = 'none';
+        hideModal();
+      },
+      onNext: function() {}
+    }
+  ];
+}
+
+// ─────────────────────────────────────────────
+// RECEIVE CONDITION
+// ─────────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'INIT_CONDITION') {
+    condition = e.data.condition;
+    initTutorial();
+  }
+});
+
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var c = params.get('condition');
+  if (c) condition = c;
+  if (params.get('coords') === 'true') coordMode = true;
+  initTutorial();
+})();
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+function initTutorial() {
+  if (condition === 'horizontal') {
+    document.getElementById('horizontal-bar-wrap').style.display = 'block';
+  } else if (condition === 'vertical') {
+    buildVerticalBar();
+  } else if (condition === 'ring') {
+    buildRing();
+  }
+
+  document.getElementById('image-wrap').addEventListener('click', handleClick);
+
+  if (coordMode) {
+    document.getElementById('coord-display').style.display = 'block';
+    document.getElementById('image-wrap').addEventListener('mousemove', function(e) {
+      var img  = document.getElementById('game-image');
+      var rect = img.getBoundingClientRect();
+      var sx   = img.naturalWidth  / img.clientWidth;
+      var sy   = img.naturalHeight / img.clientHeight;
+      document.getElementById('coord-display').textContent =
+        'x: ' + Math.round((e.clientX - rect.left) * sx) +
+        '  y: ' + Math.round((e.clientY - rect.top)  * sy);
+    });
+  }
+
+  currentStep = 0;
+  showStep(0);
+}
+
+// ─────────────────────────────────────────────
+// STEP NAVIGATION
+// ─────────────────────────────────────────────
+function showStep(index) {
+  var steps = getSteps();
+  if (index >= steps.length) return;
+  var step = steps[index];
+  document.getElementById('modal-step-label').textContent = step.stepLabel;
+  document.getElementById('modal-title').textContent      = step.title;
+  document.getElementById('modal-body').innerHTML         = step.body;
+  document.getElementById('modal-next').style.display     = 'inline-block';
+  document.getElementById('modal-next').textContent       = 'Next →';
+  document.getElementById('modal-next').onclick           = advanceStep;
+  showModal();
+  if (step.onShow) step.onShow();
+}
+
+function advanceStep() {
+  var steps = getSteps();
+  if (steps[currentStep] && steps[currentStep].onNext) steps[currentStep].onNext();
+  currentStep++;
+  if (currentStep < steps.length) showStep(currentStep);
+}
+
+// ─────────────────────────────────────────────
+// MODAL / DIM HELPERS
+// ─────────────────────────────────────────────
+function showModal() {
+  var card = document.getElementById('modal-card');
+  card.style.display = 'block';
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = '';
+}
+function hideModal() { document.getElementById('modal-card').style.display = 'none'; }
+function showDim(on) { document.getElementById('dim-overlay').style.display = on ? 'block' : 'none'; }
+function lockClicking()   { gameActive = false; }
+function unlockClicking() { gameActive = true;  }
+
+// ─────────────────────────────────────────────
+// HIGHLIGHT HELPERS
+// ─────────────────────────────────────────────
+function showHighlight(i) {
+  var r = tutorialRegions[i];
+  var b = document.getElementById('highlight-' + (i + 1));
+  b.style.top = r.hTop; b.style.left = r.hLeft;
+  b.style.width = r.hWidth; b.style.height = r.hHeight;
+  b.style.display = 'block';
+}
+function hideHighlight(i) {
+  var b = document.getElementById('highlight-' + (i + 1));
+  if (b) b.style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+// CLICK HANDLER
+// ─────────────────────────────────────────────
+function handleClick(e) {
+  if (!gameActive) return;
+  if (totalClicks >= MAX_CLICKS) return;
+
+  var img    = document.getElementById('game-image');
+  var rect   = img.getBoundingClientRect();
+  var clickX = e.clientX - rect.left;
+  var clickY = e.clientY - rect.top;
+  var sx     = img.naturalWidth  / img.clientWidth;
+  var sy     = img.naturalHeight / img.clientHeight;
+  var nx     = clickX * sx;
+  var ny     = clickY * sy;
+
+  if (nx < img.naturalWidth * RIGHT_START_FRACTION) return;
+
+  totalClicks++;
+  document.getElementById('clicks-count').textContent = MAX_CLICKS - totalClicks;
+
+  var hit = false, hitPoints = 0, hitIndex = -1;
+  tutorialRegions.forEach(function(region, i) {
+    if (region.found) return;
+    if (nx >= region.x1 && nx <= region.x2 && ny >= region.y1 && ny <= region.y2) {
+      hit = true; hitPoints = region.points; hitIndex = i;
+      region.found = true; score += region.points; foundCount++;
+    }
+  });
+
+  placeMarker(clickX, clickY, hit);
+
+  if (hit) {
+    hideHighlight(hitIndex);
+    showFlash('+' + hitPoints + ' point' + (hitPoints !== 1 ? 's' : ''));
+    updateProgress();
+
+    if (foundCount === 1) {
+      // Pause, show step 4 modal to introduce second difference
+      lockClicking();
+      currentStep = 4;
+      showDim(true);
+      showStep(currentStep);
+    } else if (foundCount >= 2) {
+      onTutorialComplete();
+    }
+  } else {
+    // Miss feedback
+    lockClicking();
+    showDim(true);
+    document.getElementById('modal-step-label').textContent =
+      foundCount === 0 ? 'Step 4 of 5' : 'Step 5 of 5';
+    document.getElementById('modal-title').innerHTML = '❌ Missed!';
+    document.getElementById('modal-body').innerHTML  =
+      'That click didn\'t land on the difference. Try clicking <strong>inside the highlighted area</strong>.';
+    var btn = document.getElementById('modal-next');
+    btn.textContent = 'Try again →';
+    btn.style.display = 'inline-block';
+    btn.onclick = function() {
+      btn.textContent = 'Next →';
+      btn.onclick = advanceStep;
+      showDim(false);
+      hideModal();
+      unlockClicking();
+    };
+    showModal();
+  }
+
+  if (totalClicks >= MAX_CLICKS && foundCount < 2) {
+    gameActive = false;
+    showDim(false); hideModal();
+    document.getElementById('completion-banner').textContent =
+      'You\'ve used all your clicks. In the real game, use clicks carefully!';
+    document.getElementById('completion-banner').style.display = 'block';
+    document.getElementById('done-btn').style.display = 'inline-block';
+  }
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function placeMarker(x, y, hit) {
+  var m = document.createElement('div');
+  m.className = 'click-marker ' + (hit ? 'hit' : 'miss');
+  m.style.left = x + 'px'; m.style.top = y + 'px';
+  document.getElementById('image-wrap').appendChild(m);
+}
+
+function updateProgress() {
+  var pct = Math.min(score / 20 * 100, 100);
+  if (condition === 'horizontal') document.getElementById('h-fill').style.width = pct + '%';
+  if (condition === 'vertical')   document.getElementById('v-fill').style.height = pct + '%';
+  if (condition === 'ring') {
+    document.getElementById('r-fill').setAttribute('stroke-dashoffset',
+      circumference - (pct / 100) * circumference);
+  }
+}
+
+function showFlash(msg) {
+  var elId = condition === 'horizontal' ? 'h-points-flash' :
+             condition === 'ring'       ? 'r-points-flash' :
+             condition === 'vertical'   ? 'v-points-flash' : null;
+  if (!elId) return;
+  var el = document.getElementById(elId);
+  if (!el) return;
+  if (flashTimer) clearTimeout(flashTimer);
+  el.textContent = msg; el.style.opacity = '1';
+  flashTimer = setTimeout(function() { el.style.opacity = '0'; }, 3000);
+}
+
+function onTutorialComplete() {
+  gameActive = false;
+  hideHighlight(0); hideHighlight(1);
+  showDim(false); hideModal();
+  document.getElementById('completion-banner').style.display = 'block';
+  document.getElementById('done-btn').style.display = 'inline-block';
+}
+
+function buildVerticalBar() {
+  document.getElementById('vertical-bar-wrap').innerHTML =
+    '<div style="font-size:0.85rem;color:#888880;margin-bottom:6px;text-align:center;">Goal: 20 pts</div>' +
+    '<div class="vert-track"><div class="vert-fill" id="v-fill"></div></div>' +
+    '<div class="points-flash" id="v-points-flash"></div>';
+}
+
+function buildRing() {
+  var size = 127, stroke = 18, r = (size - stroke) / 2;
+  circumference = 2 * Math.PI * r;
+  document.getElementById('ring-svg-container').innerHTML =
+    '<svg id="ring-svg" width="' + size + '" height="' + size + '">' +
+    '<circle cx="' + size/2 + '" cy="' + size/2 + '" r="' + r +
+      '" fill="none" stroke="rgba(232,230,225,1)" stroke-width="' + stroke + '"/>' +
+    '<circle class="ring-fill" id="r-fill" cx="' + size/2 + '" cy="' + size/2 + '" r="' + r +
+      '" fill="none" stroke="#3a8f5a" stroke-width="' + stroke +
+      '" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + circumference +
+      '" transform="rotate(-90 ' + size/2 + ' ' + size/2 + ')"/>' +
+    '</svg>';
+  document.getElementById('ring-bar-wrap').style.display = 'flex';
+}
+
+function finishTutorial() {
+  window.parent.postMessage({ type: 'TUTORIAL_COMPLETE' }, '*');
+  document.getElementById('done-btn').textContent = 'Loading…';
+  document.getElementById('done-btn').disabled = true;
+}
+</script>
+</body>
+</html>
