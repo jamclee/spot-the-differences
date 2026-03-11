@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spot the Difference – Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --border: #e8e6e1;
+    --text: #1a1a1a;
+    --text-muted: #888880;
+    --green: #3a8f5a;
+    --green-light: #e8f5ed;
+    --blue: #2563a8;
+    --track: #e8e6e1;
+    --radius: 10px;
+    --amber: #d97706;
+  }
+  html, body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 24px 48px;
+    min-height: 100vh;
+  }
+  #app {
+    max-width: 1160px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  header {
+    width: 100%;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  h1 { font-family: 'DM Serif Display', serif; font-size: 1.75rem; font-weight: 400; letter-spacing: -0.01em; }
+  .instructions { font-size: 0.9rem; color: var(--text-muted); text-align: center; max-width: 680px; line-height: 1.6; }
+  .clicks-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 0.85rem; color: var(--text);
+  }
+  .clicks-badge span { font-weight: 500; }
+
+  /* ── PROGRESS INDICATORS ── */
+  #horizontal-bar-wrap { width: 400px; }
+  .bar-track { width: 400px; height: 18px; background: var(--track); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0%; background: var(--green); border-radius: 999px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+  .points-flash { font-size: 1rem; font-weight: 500; color: var(--green); height: 24px; opacity: 0; transition: opacity 0.4s ease; text-align: center; margin-top: 6px; }
+
+  /* ── GAME AREA ── */
+  #game-area { position: relative; display: flex; align-items: flex-start; gap: 20px; width: 100%; max-width: 1160px; }
+  #image-wrap {
+    position: relative; flex: none; width: 1100px; max-width: 100%;
+    cursor: crosshair; border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07); border: 1px solid var(--border);
+  }
+  #game-image { display: block; width: 100%; height: auto; border-radius: var(--radius); user-select: none; -webkit-user-drag: none; }
+
+  /* ── CLICK MARKERS ── */
+  .click-marker {
+    position: absolute; width: 28px; height: 28px;
+    border-radius: 50%; border: 2px solid white;
+    transform: translate(-50%,-50%); pointer-events: none;
+    animation: markerPop 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 9;
+  }
+  .click-marker.hit  { background: rgba(58,143,90,0.5);  border-color: var(--green); }
+  .click-marker.miss { background: rgba(200,60,60,0.35); border-color: #c83c3c; }
+  @keyframes markerPop {
+    from { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+    to   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  }
+
+  /* ── VERTICAL BAR ── */
+  #vertical-bar-wrap { flex-shrink: 0; width: 40px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 4px; }
+  .vert-track { width: 18px; height: 400px; background: var(--track); border-radius: 999px; position: relative; overflow: hidden; }
+  .vert-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: var(--green); border-radius: 999px; transition: height 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  /* ── COMPLETION ── */
+  #completion-banner { display: none; background: var(--green-light); border: 1px solid #b6ddc5; color: var(--green); border-radius: var(--radius); padding: 12px 28px; font-size: 0.95rem; font-weight: 500; text-align: center; animation: fadeIn 0.4s ease; }
+  #done-btn { display: none; margin-top: 16px; background: var(--text); color: white; border: none; border-radius: var(--radius); padding: 12px 40px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; letter-spacing: 0.01em; transition: background 0.2s, transform 0.1s; animation: fadeIn 0.4s ease; }
+  #done-btn:hover { background: #333; }
+  #done-btn:active { transform: scale(0.98); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ══════════════════════════════════════════════
+     SPOTLIGHT TUTORIAL SYSTEM (fixed / page-level)
+  ══════════════════════════════════════════════ */
+
+  /* Full-screen SVG backdrop — no fill, just used for pointer-event blocking */
+  #tut-svg {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 500;
+    display: none;
+  }
+
+  /* Animated border ring around highlighted area */
+  #tut-ring {
+    position: fixed;
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 501;
+    opacity: 0;
+    transition:
+      top    0.48s cubic-bezier(0.4,0,0.2,1),
+      left   0.48s cubic-bezier(0.4,0,0.2,1),
+      width  0.48s cubic-bezier(0.4,0,0.2,1),
+      height 0.48s cubic-bezier(0.4,0,0.2,1),
+      border-radius 0.48s ease,
+      opacity 0.3s ease;
+  }
+  #tut-ring.visible {
+    opacity: 1;
+    border: 2.5px solid rgba(37,99,168,0.8);
+    box-shadow: 0 0 0 3px rgba(37,99,168,0.15), 0 0 16px 4px rgba(37,99,168,0.15);
+    animation: ringGlow 2s ease-in-out infinite;
+  }
+  /* For image-internal highlights, use amber accent */
+  #tut-ring.amber {
+    border-color: rgba(251,191,36,0.9) !important;
+    box-shadow: 0 0 0 4px rgba(251,191,36,0.2), 0 0 24px 8px rgba(251,191,36,0.15) !important;
+    animation: ringGlowAmber 1.4s ease-in-out infinite !important;
+  }
+  @keyframes ringGlow {
+    0%,100% { box-shadow: 0 0 0 3px rgba(37,99,168,0.12), 0 0 12px 4px rgba(37,99,168,0.12); }
+    50%      { box-shadow: 0 0 0 5px rgba(37,99,168,0.22), 0 0 20px 8px rgba(37,99,168,0.20); }
+  }
+  @keyframes ringGlowAmber {
+    0%,100% { box-shadow: 0 0 0 4px rgba(251,191,36,0.18), 0 0 24px 8px rgba(251,191,36,0.12); }
+    50%      { box-shadow: 0 0 0 8px rgba(251,191,36,0.30), 0 0 36px 14px rgba(251,191,36,0.22); }
+  }
+
+  /* Tooltip card */
+  #tut-tip {
+    position: fixed;
+    z-index: 502;
+    width: 310px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.09);
+    border-radius: 4px;
+    padding: 20px 22px 16px;
+    box-shadow: 0 10px 44px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.07);
+    opacity: 0;
+    transform: scale(0.93) translateY(8px);
+    transition:
+      left    0.48s cubic-bezier(0.4,0,0.2,1),
+      top     0.48s cubic-bezier(0.4,0,0.2,1),
+      opacity 0.28s ease,
+      transform 0.28s ease;
+    pointer-events: all;
+  }
+  #tut-tip.visible { opacity: 1; transform: scale(1) translateY(0); }
+
+  /* No arrow — plain rectangle */
+
+  .tt-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px; }
+  .tt-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; color: var(--text); margin-bottom: 8px; line-height: 1.3; }
+  .tt-body  { font-size: 0.875rem; color: #555; line-height: 1.65; margin-bottom: 16px; }
+  .tt-body strong { color: var(--text); }
+
+  .tt-footer { display: flex; justify-content: space-between; align-items: center; }
+  .tt-dots   { display: flex; gap: 5px; }
+  .tt-dot    { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.25s, transform 0.2s; }
+  .tt-dot.active { background: var(--text); transform: scale(1.3); }
+
+  .tt-btn {
+    background: var(--text); color: white;
+    border: none; border-radius: 8px;
+    padding: 8px 20px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500; cursor: pointer;
+    letter-spacing: 0.01em; transition: background 0.2s, transform 0.1s;
+  }
+  .tt-btn:hover  { background: #333; }
+  .tt-btn:active { transform: scale(0.97); }
+  .tt-btn.amber  { background: var(--amber); }
+  .tt-btn.amber:hover { background: #b45309; }
+
+  /* "You must click here" arrow indicator for image steps */
+  #tut-click-cue {
+    position: fixed;
+    pointer-events: none;
+    z-index: 503;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.3s ease, top 0.48s cubic-bezier(0.4,0,0.2,1), left 0.48s cubic-bezier(0.4,0,0.2,1);
+  }
+  #tut-click-cue.visible { opacity: 1; }
+  #tut-click-cue .cue-label {
+    background: rgba(217,119,6,0.92); color: #fff;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+    padding: 3px 10px; border-radius: 20px;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  #tut-click-cue .cue-arrow {
+    font-size: 1.4rem;
+    animation: bounceDown 1s ease-in-out infinite;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  @keyframes bounceDown {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(6px); }
+  }
+
+  /* ── COORD HELPER ── */
+  #coord-display { display: none; position: fixed; bottom: 16px; right: 16px; background: rgba(0,0,0,0.8); color: #fff; font-family: monospace; font-size: 0.85rem; padding: 10px 16px; border-radius: 8px; z-index: 600; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="page-title">Tutorial: Spot the Difference</h1>
+    <p class="instructions" id="page-instructions">Walk through this short tutorial before starting the real game.</p>
+    <div class="clicks-badge" id="clicks-badge">Clicks remaining: <span id="clicks-count">12</span></div>
+  </header>
+
+  <!-- Horizontal bar -->
+  <div id="horizontal-bar-wrap" style="display:none;">
+    <div style="font-size:0.85rem;color:#888880;margin-bottom:6px;text-align:left;">Goal: 20 points</div>
+    <div class="bar-track"><div class="bar-fill" id="h-fill"></div></div>
+    <div class="points-flash" id="h-points-flash"></div>
+  </div>
+
+  <!-- Ring -->
+  <div id="ring-bar-wrap" style="display:none;flex-direction:column;align-items:center;">
+    <div style="font-size:0.85rem;color:#888880;margin-bottom:6px;text-align:center;">Goal: 20 points</div>
+    <div id="ring-svg-container"></div>
+    <div class="points-flash" id="r-points-flash"></div>
+  </div>
+
+  <div id="game-area">
+    <div id="image-wrap">
+      <img id="game-image"
+           src="https://jamclee.github.io/spot-the-differences/game_example.png"
+           alt="Tutorial spot the difference" draggable="false"/>
+    </div>
+    <div id="vertical-bar-wrap"></div>
+  </div>
+
+  <div id="completion-banner">🎉 Great work! You found both differences. You're ready for the real game.</div>
+  <button id="done-btn" onclick="finishTutorial()">Continue to the game →</button>
+</div>
+
+<!-- ══ SPOTLIGHT SYSTEM (page-level, fixed) ══ -->
+<!-- No dark overlay — background stays fully visible -->
+
+<div id="tut-ring"></div>
+
+<div id="tut-tip" data-arrow="none">
+  <div class="tt-label" id="tt-label"></div>
+  <div class="tt-title" id="tt-title"></div>
+  <div class="tt-body"  id="tt-body"></div>
+  <div class="tt-footer">
+    <div class="tt-dots" id="tt-dots"></div>
+    <button class="tt-btn" id="tt-btn" onclick="stepNext()">Next →</button>
+  </div>
+</div>
+
+<div id="tut-click-cue">
+  <div class="cue-label">Click here!</div>
+  <div class="cue-arrow">↓</div>
+</div>
+
+<div id="coord-display"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+var tutorialRegions = [
+  { name: 'diff_1', points: 5, x1: 559, y1: 39,  x2: 629, y2: 109 },
+  { name: 'diff_2', points: 5, x1: 858, y1: 487, x2: 928, y2: 557 }
+];
+var RIGHT_START_FRACTION = 0.5;
+var MAX_CLICKS   = 12;
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+var condition     = null;
+var score         = 0;
+var totalClicks   = 0;
+var foundCount    = 0;
+var flashTimer    = null;
+var circumference = 0;
+var gameActive    = false;
+var stepIndex     = 0;
+var coordMode     = false;
+var _holeRaf      = null;
+var _tipReady     = false;
+var _waitingForClick = false; // true while step 4/5 waits for image click
+
+// ─────────────────────────────────────────────
+// STEP DEFINITIONS
+// Five informational steps, then two interactive click steps
+// ─────────────────────────────────────────────
+function buildSteps() {
+  var indicatorSelector, indicatorBody;
+  if      (condition === 'horizontal') { indicatorSelector = '#horizontal-bar-wrap'; indicatorBody = 'As you find differences and earn points, the <strong>horizontal bar</strong> fills up left to right. Your goal is to reach <strong>20 points</strong>.'; }
+  else if (condition === 'vertical')   { indicatorSelector = '#vertical-bar-wrap';   indicatorBody = 'As you find differences and earn points, the <strong>vertical bar</strong> on the right fills up from the bottom. Your goal is to reach <strong>20 points</strong>.'; }
+  else if (condition === 'ring')       { indicatorSelector = '#ring-bar-wrap';        indicatorBody = 'As you find differences and earn points, the <strong>ring</strong> fills up clockwise. Your goal is to reach <strong>20 points</strong>.'; }
+  else                                 { indicatorSelector = null;                    indicatorBody = 'Your progress indicator updates as you find differences. Reach <strong>20 points</strong> to complete the goal.'; }
+
+  return [
+    // 0 — Welcome
+    {
+      label: 'Step 1 of 5',
+      title: 'Welcome to the Tutorial',
+      body:  'This quick walkthrough shows you how the game works. <strong>No clicking required</strong> — just follow along and press Next at each step.',
+      targetEl: function() { return document.getElementById('page-title'); },
+      pad: 16, prefer: 'bottom', interactive: false, amberRing: false
+    },
+    // 1 — Two images
+    {
+      label: 'Step 2 of 5',
+      title: 'Two Images — One Has Differences',
+      body:  'The <strong>left image</strong> is the original. The <strong>right image</strong> has subtle differences hidden inside it. You\'ll only earn points by clicking on the right half.',
+      targetEl: function() { return document.getElementById('image-wrap'); },
+      pad: 10, prefer: 'top', interactive: false, amberRing: false
+    },
+    // 2 — Clicks remaining
+    {
+      label: 'Step 3 of 5',
+      title: 'You Have 12 Clicks',
+      body:  'Each click you make counts against your total — win or miss. Look carefully before clicking so you don\'t waste them on misses.',
+      targetEl: function() { return document.getElementById('clicks-badge'); },
+      pad: 14, prefer: 'bottom', interactive: false, amberRing: false
+    },
+    // 3 — Progress indicator
+    {
+      label: 'Step 4 of 5',
+      title: 'Your Progress Indicator',
+      body:  indicatorBody,
+      targetEl: indicatorSelector ? function() { return document.querySelector(indicatorSelector); } : null,
+      pad: 14, prefer: 'bottom', interactive: false, amberRing: false
+    },
+    // 4 — Find first difference (interactive)
+    {
+      label: 'Step 5 of 5 — Your turn!',
+      title: 'Find the First Difference',
+      body:  'A difference is highlighted on the <strong>right image</strong>. Click directly on the glowing area to find it and earn points. Watch your progress update!',
+      targetEl: function() { return imageRegionEl(0); }, // virtual rect over region
+      pad: 8, prefer: 'auto', interactive: true, amberRing: true,
+      regionIndex: 0,
+      btnLabel: null // hidden — player must click
+    },
+    // 5 — Find second difference (interactive)
+    {
+      label: 'Step 5 of 5 — Your turn!',
+      title: 'Find the Second Difference',
+      body:  'Excellent! Now spot the second highlighted difference and click on it.',
+      targetEl: function() { return imageRegionEl(1); },
+      pad: 8, prefer: 'auto', interactive: true, amberRing: true,
+      regionIndex: 1,
+      btnLabel: null
+    }
+  ];
+}
+
+// Returns a fake DOMRect representing a tutorial region projected onto the screen
+function imageRegionEl(i) {
+  var img  = document.getElementById('game-image');
+  var rect = img.getBoundingClientRect();
+  var r    = tutorialRegions[i];
+  var sx   = img.clientWidth  / img.naturalWidth;
+  var sy   = img.clientHeight / img.naturalHeight;
+  return {
+    left:   rect.left + r.x1 * sx,
+    top:    rect.top  + r.y1 * sy,
+    right:  rect.left + r.x2 * sx,
+    bottom: rect.top  + r.y2 * sy,
+    width:  (r.x2 - r.x1) * sx,
+    height: (r.y2 - r.y1) * sy
+  };
+}
+
+// ─────────────────────────────────────────────
+// RECEIVE CONDITION
+// ─────────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'INIT_CONDITION') {
+    condition = e.data.condition;
+    initTutorial();
+  }
+});
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var c = params.get('condition');
+  if (c) condition = c;
+  // Default to 'none' so tutorial always starts
+  if (!condition) condition = 'none';
+  if (params.get('coords') === 'true') coordMode = true;
+  initTutorial();
+})();
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+function initTutorial() {
+  if (condition === 'horizontal') document.getElementById('horizontal-bar-wrap').style.display = 'block';
+  else if (condition === 'vertical') buildVerticalBar();
+  else if (condition === 'ring')     buildRing();
+
+  document.getElementById('image-wrap').addEventListener('click', handleClick);
+
+  if (coordMode) {
+    document.getElementById('coord-display').style.display = 'block';
+    document.getElementById('image-wrap').addEventListener('mousemove', function(e) {
+      var img = document.getElementById('game-image');
+      var rect = img.getBoundingClientRect();
+      document.getElementById('coord-display').textContent =
+        'x: ' + Math.round((e.clientX-rect.left) * img.naturalWidth/img.clientWidth) +
+        '  y: ' + Math.round((e.clientY-rect.top) * img.naturalHeight/img.clientHeight);
+    });
+  }
+
+  // Start tutorial immediately — image only needed for steps 4-5
+  startTutorial();
+}
+
+function startTutorial() {
+  stepIndex = 0;
+  // Wait for first paint so getBoundingClientRect() returns real coords
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      renderStep(stepIndex, false);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// STEP RENDERING
+// ─────────────────────────────────────────────
+function renderStep(idx, animated) {
+  var steps = buildSteps();
+  var step  = steps[idx];
+  var TOTAL_INFO_STEPS = 5; // total dot count (steps 0–4 info, step 5 is continuation of step 4)
+
+  // Dots (only for informational steps 0-3; steps 4-5 share dot 4)
+  var dotCount = 5;
+  var activeDot = Math.min(idx, 4);
+  var dotsEl = document.getElementById('tt-dots');
+  dotsEl.innerHTML = '';
+  for (var d = 0; d < dotCount; d++) {
+    var dot = document.createElement('div');
+    dot.className = 'tt-dot' + (d === activeDot ? ' active' : '');
+    dotsEl.appendChild(dot);
+  }
+
+  document.getElementById('tt-label').textContent = step.label;
+  document.getElementById('tt-title').textContent  = step.title;
+  document.getElementById('tt-body').innerHTML     = step.body;
+
+  var btn = document.getElementById('tt-btn');
+  if (step.interactive) {
+    // Hide button — wait for click
+    btn.style.display = 'none';
+    _waitingForClick = true;
+    gameActive = true;
+  } else {
+    btn.style.display = 'inline-block';
+    btn.textContent = (idx === 3) ? 'Got it →' : 'Next →';
+    btn.className   = 'tt-btn';
+    btn.onclick     = stepNext;
+    _waitingForClick = false;
+    gameActive = false;
+  }
+
+  // Click cue
+  var cue = document.getElementById('tut-click-cue');
+  cue.classList.remove('visible');
+
+  // Target element
+  var target = step.targetEl ? step.targetEl() : null;
+
+  var ring = document.getElementById('tut-ring');
+  ring.classList.remove('amber');
+
+  if (!target) {
+    clearSpotlight();
+    positionTipCenter();
+    return;
+  }
+
+  var pad = step.pad || 12;
+  var s = {
+    x: target.left  - pad,
+    y: target.top   - pad,
+    w: target.width  + pad * 2,
+    h: target.height + pad * 2
+  };
+
+  // Clamp to viewport
+  s.x = Math.max(4, s.x);
+  s.y = Math.max(4, s.y);
+
+  animateHole(s, animated);
+
+  ring.style.left   = s.x + 'px';
+  ring.style.top    = s.y + 'px';
+  ring.style.width  = s.w + 'px';
+  ring.style.height = s.h + 'px';
+  ring.style.borderRadius = (pad + 4) + 'px';
+  if (!ring.classList.contains('visible')) ring.classList.add('visible');
+  if (step.amberRing) ring.classList.add('amber');
+
+  // Click cue for interactive steps
+  if (step.interactive) {
+    setTimeout(function() {
+      cue.style.left = (s.x + s.w / 2 - 36) + 'px';
+      cue.style.top  = (s.y + s.h + 6) + 'px';
+      cue.classList.add('visible');
+    }, animated ? 500 : 0);
+  }
+
+  positionTip(s, step.prefer || 'bottom', animated);
+}
+
+// ─────────────────────────────────────────────
+// STEP NAVIGATION
+// ─────────────────────────────────────────────
+function stepNext() {
+  stepIndex++;
+  var steps = buildSteps();
+  if (stepIndex >= steps.length) { endTutorial(); return; }
+  renderStep(stepIndex, true);
+}
+
+function endTutorial() {
+  // Shouldn't normally reach this — completion fires from click handler
+  onTutorialComplete();
+}
+
+// ─────────────────────────────────────────────
+// CLICK HANDLER
+// ─────────────────────────────────────────────
+function handleClick(e) {
+  if (!gameActive || !_waitingForClick) return;
+  if (totalClicks >= MAX_CLICKS) return;
+
+  var img    = document.getElementById('game-image');
+  var rect   = img.getBoundingClientRect();
+  var clickX = e.clientX - rect.left;
+  var clickY = e.clientY - rect.top;
+  var sx     = img.naturalWidth  / img.clientWidth;
+  var sy     = img.naturalHeight / img.clientHeight;
+  var nx     = clickX * sx;
+  var ny     = clickY * sy;
+
+  if (nx < img.naturalWidth * RIGHT_START_FRACTION) return;
+
+  totalClicks++;
+  document.getElementById('clicks-count').textContent = MAX_CLICKS - totalClicks;
+
+  var steps    = buildSteps();
+  var curStep  = steps[stepIndex];
+  var expected = curStep.regionIndex;
+  var region   = tutorialRegions[expected];
+
+  var hit = (nx >= region.x1 && nx <= region.x2 && ny >= region.y1 && ny <= region.y2) && !region.found;
+
+  placeMarker(clickX, clickY, hit);
+
+  if (hit) {
+    region.found = true;
+    score += region.points;
+    foundCount++;
+    showFlash('+' + region.points + ' point' + (region.points !== 1 ? 's' : ''));
+    updateProgress();
+
+    _waitingForClick = false;
+    gameActive = false;
+    document.getElementById('tut-click-cue').classList.remove('visible');
+
+    if (foundCount >= 2) {
+      // Short pause then complete
+      setTimeout(onTutorialComplete, 600);
+    } else {
+      // Move to next interactive step after brief pause
+      setTimeout(function() { stepIndex++; renderStep(stepIndex, true); }, 700);
+    }
+  } else {
+    // Miss — show retry tooltip without leaving spotlight
+    _waitingForClick = false;
+    gameActive = false;
+    document.getElementById('tut-click-cue').classList.remove('visible');
+
+    var btn = document.getElementById('tt-btn');
+    document.getElementById('tt-label').textContent = '❌ Not quite!';
+    document.getElementById('tt-title').textContent = 'Try again';
+    document.getElementById('tt-body').innerHTML    = 'That click missed the highlighted area. Click <strong>Try again</strong> and aim inside the glowing box.';
+    btn.textContent  = 'Try again →';
+    btn.style.display = 'inline-block';
+    btn.className    = 'tt-btn amber';
+    btn.onclick = function() {
+      renderStep(stepIndex, false); // re-render same step
+    };
+
+    // Reposition tip near spotlight
+    var s = getCurrentSpotlight();
+    if (s) positionTip(s, 'auto', false);
+    showTip();
+  }
+
+  if (totalClicks >= MAX_CLICKS && foundCount < 2) {
+    gameActive = false; _waitingForClick = false;
+    setTimeout(function() {
+      hideTutorial();
+      document.getElementById('completion-banner').textContent = 'You\'ve used all your clicks. In the real game, aim carefully!';
+      document.getElementById('completion-banner').style.display = 'block';
+      document.getElementById('done-btn').style.display = 'inline-block';
+    }, 400);
+  }
+}
+
+// ─────────────────────────────────────────────
+// SPOTLIGHT / HOLE
+// ─────────────────────────────────────────────
+var _curSpotlight = null;
+
+function getCurrentSpotlight() { return _curSpotlight; }
+
+function animateHole(s, animated) {
+  // No SVG overlay — ring handles highlighting; just store current spotlight
+  _curSpotlight = s;
+}
+
+function clearSpotlight() {
+  document.getElementById('tut-ring').classList.remove('visible');
+  _curSpotlight = null;
+}
+
+// ─────────────────────────────────────────────
+// TOOLTIP POSITIONING
+// ─────────────────────────────────────────────
+var TW = 310, TH = 200, GAP = 16;
+
+function positionTip(s, prefer, animated) {
+  var tip = document.getElementById('tut-tip');
+  tip.classList.remove('visible');
+
+  var delay = animated ? 80 : 20;
+  setTimeout(function() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var dirs = prefer === 'auto'
+      ? ['bottom','top','right','left']
+      : [prefer,'bottom','top','right','left'];
+
+    var tx, ty, arrow = 'none';
+    for (var i = 0; i < dirs.length; i++) {
+      var d = dirs[i];
+      var cx, cy;
+      if (d === 'bottom') { cx = s.x+s.w/2-TW/2; cy = s.y+s.h+GAP; }
+      else if (d==='top') { cx = s.x+s.w/2-TW/2; cy = s.y-TH-GAP; }
+      else if (d==='right') { cx = s.x+s.w+GAP; cy = s.y+s.h/2-TH/2; }
+      else { cx = s.x-TW-GAP; cy = s.y+s.h/2-TH/2; }
+      cx = Math.max(8, Math.min(cx, vw-TW-8));
+      cy = Math.max(8, Math.min(cy, vh-TH-8));
+      var sc_x = s.x+s.w/2, sc_y = s.y+s.h/2;
+      var overlaps = (cx < sc_x+16 && cx+TW > sc_x-16 && cy < sc_y+16 && cy+TH > sc_y-16);
+      if (!overlaps || i === dirs.length-1) { tx=cx; ty=cy; arrow=d; break; }
+    }
+
+    tip.setAttribute('data-arrow', arrow);
+    tip.style.left = tx+'px'; tip.style.top = ty+'px';
+    showTip();
+  }, delay);
+}
+
+function positionTipCenter() {
+  var tip = document.getElementById('tut-tip');
+  tip.setAttribute('data-arrow','none');
+  tip.style.left = (window.innerWidth/2 - TW/2)+'px';
+  tip.style.top  = (window.innerHeight/2 - TH/2)+'px';
+  showTip();
+}
+
+function showTip() { document.getElementById('tut-tip').classList.add('visible'); }
+function hideTip() { document.getElementById('tut-tip').classList.remove('visible'); }
+
+// ─────────────────────────────────────────────
+// TUTORIAL COMPLETE / HIDE
+// ─────────────────────────────────────────────
+function hideTutorial() {
+  hideTip();
+  document.getElementById('tut-ring').classList.remove('visible');
+  document.getElementById('tut-click-cue').classList.remove('visible');
+}
+
+function onTutorialComplete() {
+  hideTutorial();
+  document.getElementById('completion-banner').style.display = 'block';
+  document.getElementById('done-btn').style.display = 'inline-block';
+}
+
+// ─────────────────────────────────────────────
+// PROGRESS
+// ─────────────────────────────────────────────
+function updateProgress() {
+  var pct = Math.min(score / 20 * 100, 100);
+  if (condition === 'horizontal' && document.getElementById('h-fill'))
+    document.getElementById('h-fill').style.width = pct + '%';
+  if (condition === 'vertical' && document.getElementById('v-fill'))
+    document.getElementById('v-fill').style.height = pct + '%';
+  if (condition === 'ring' && document.getElementById('r-fill'))
+    document.getElementById('r-fill').setAttribute('stroke-dashoffset', circumference - (pct/100)*circumference);
+}
+
+function showFlash(msg) {
+  var elId = condition==='horizontal' ? 'h-points-flash' : condition==='ring' ? 'r-points-flash' : condition==='vertical' ? 'v-points-flash' : null;
+  if (!elId) return;
+  var el = document.getElementById(elId);
+  if (!el) return;
+  if (flashTimer) clearTimeout(flashTimer);
+  el.textContent = msg; el.style.opacity = '1';
+  flashTimer = setTimeout(function() { el.style.opacity = '0'; }, 3000);
+}
+
+function placeMarker(x, y, hit) {
+  var m = document.createElement('div');
+  m.className = 'click-marker ' + (hit ? 'hit' : 'miss');
+  m.style.left = x+'px'; m.style.top = y+'px';
+  document.getElementById('image-wrap').appendChild(m);
+}
+
+// ─────────────────────────────────────────────
+// BAR / RING BUILDERS
+// ─────────────────────────────────────────────
+function buildVerticalBar() {
+  document.getElementById('vertical-bar-wrap').innerHTML =
+    '<div style="font-size:0.85rem;color:#888880;margin-bottom:6px;text-align:center;">Goal: 20 pts</div>' +
+    '<div class="vert-track"><div class="vert-fill" id="v-fill"></div></div>' +
+    '<div class="points-flash" id="v-points-flash"></div>';
+}
+function buildRing() {
+  var size=127, stroke=18, r=(size-stroke)/2;
+  circumference = 2*Math.PI*r;
+  document.getElementById('ring-svg-container').innerHTML =
+    '<svg id="ring-svg" width="'+size+'" height="'+size+'">' +
+    '<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="rgba(232,230,225,1)" stroke-width="'+stroke+'"/>' +
+    '<circle class="ring-fill" id="r-fill" cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="#3a8f5a" stroke-width="'+stroke+'"' +
+    ' stroke-dasharray="'+circumference+'" stroke-dashoffset="'+circumference+'"' +
+    ' transform="rotate(-90 '+size/2+' '+size/2+')"/></svg>';
+  document.getElementById('ring-bar-wrap').style.display = 'flex';
+}
+
+// ─────────────────────────────────────────────
+// REFLOW ON RESIZE
+// ─────────────────────────────────────────────
+window.addEventListener('resize', function() {
+  renderStep(stepIndex, false);
+});
+
+function finishTutorial() {
+  window.parent.postMessage({ type: 'TUTORIAL_COMPLETE' }, '*');
+  document.getElementById('done-btn').textContent = 'Loading…';
+  document.getElementById('done-btn').disabled = true;
+}
+</script>
+</body>
+</html>
