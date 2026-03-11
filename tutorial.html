@@ -230,8 +230,8 @@
 <body>
 <div id="app">
   <header>
-    <h1 id="page-title">Tutorial: Spot the Difference</h1>
-    <p class="instructions" id="page-instructions">Walk through this short tutorial before starting the real game.</p>
+    <h1 id="page-title">Tutorial: Spot the Differences Game</h1>
+    <p class="instructions" id="page-instructions">Please walk through this short tutorial before starting the real game.</p>
     <div class="clicks-badge" id="clicks-badge">Clicks remaining: <span id="clicks-count">12</span></div>
   </header>
 
@@ -258,7 +258,7 @@
     <div id="vertical-bar-wrap"></div>
   </div>
 
-  <div id="completion-banner">🎉 Great work! You found both differences. You're ready for the real game.</div>
+  <div id="completion-banner">Thank you for walking through this tutorial! You are now ready to begin the real game.</div>
   <button id="done-btn" onclick="finishTutorial()">Continue to the game →</button>
 </div>
 
@@ -327,15 +327,15 @@ function buildSteps() {
     {
       label: 'Step 1 of 5',
       title: 'Welcome to the Tutorial',
-      body:  'This quick walkthrough shows you how the game works. <strong>No clicking required</strong> — just follow along and press Next at each step.',
+      body:  'We will now briefly orient you to the game interface and setup. Please read through each step and follow the instructions to proceed through the tutorial.',
       targetEl: function() { return document.getElementById('page-title'); },
       pad: 16, prefer: 'bottom', interactive: false, amberRing: false
     },
     // 1 — Two images
     {
       label: 'Step 2 of 5',
-      title: 'Two Images — One Has Differences',
-      body:  'The <strong>left image</strong> is the original. The <strong>right image</strong> has subtle differences hidden inside it. You\'ll only earn points by clicking on the right half.',
+      title: 'Interact with the Right-hand Image Only',
+      body:  'The <strong>left image</strong> is the original. The <strong>right image</strong> has ten differences hidden inside it. You\'ll only earn points by clicking on the right-hand image.',
       targetEl: function() { return document.getElementById('image-wrap'); },
       pad: 10, prefer: 'top', interactive: false, amberRing: false
     },
@@ -343,7 +343,7 @@ function buildSteps() {
     {
       label: 'Step 3 of 5',
       title: 'You Have 12 Clicks',
-      body:  'Each click you make counts against your total — win or miss. Look carefully before clicking so you don\'t waste them on misses.',
+      body:  'You will have 12 chances to identify 10 differences. Each click you make counts against your total number of clicks — win or miss. Look carefully before clicking so you don\'t waste them on misses. You can check how many clicks you have remaining at the top of your screen.',
       targetEl: function() { return document.getElementById('clicks-badge'); },
       pad: 14, prefer: 'bottom', interactive: false, amberRing: false
     },
